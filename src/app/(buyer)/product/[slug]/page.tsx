@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { ShoppingCart, Store, ShieldCheck, Star } from "lucide-react"
 import { ProductGrid } from "@/components/buyer/product-grid"
 import { ProductCard } from "@/components/buyer/product-card"
+import { AddToCartButton } from "@/components/buyer/add-to-cart-button"
 
 export default async function ProductDetailPage({
   params
@@ -119,10 +120,19 @@ export default async function ProductDetailPage({
                 <span className="text-destructive">Out of Stock</span>
               )}
             </div>
-            <Button size="lg" className="w-full h-14 text-lg" disabled={product.stock_quantity <= 0}>
-              <ShoppingCart className="w-5 h-5 mr-2" />
-              Add to Cart
-            </Button>
+            <AddToCartButton 
+              size="lg" 
+              className="w-full h-14 text-lg" 
+              disabled={product.stock_quantity <= 0}
+              product={{
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                imageUrl: primaryImage,
+                sellerName: product.sellers?.store_name || "Unknown Seller",
+                maxQuantity: product.stock_quantity
+              }}
+            />
           </div>
         </div>
       </div>
@@ -151,7 +161,8 @@ export default async function ProductDetailPage({
             return (
               <ProductCard
                 key={rel.id}
-                id={rel.slug} // Link via slug
+                id={rel.id}
+                slug={rel.slug}
                 name={rel.name}
                 price={rel.price}
                 compareAtPrice={rel.compare_at_price || undefined}

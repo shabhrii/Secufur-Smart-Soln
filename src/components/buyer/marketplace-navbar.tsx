@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { ShieldCheck, Menu } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { SearchBar } from "./search-bar"
-import { CartButton } from "./cart-button"
+import { CartDrawer } from "./cart-drawer"
 import { UserNav } from "@/components/shared/user-nav"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -17,8 +17,8 @@ export function MarketplaceNavbar() {
         <div className="flex items-center gap-2 md:gap-4">
           <Sheet>
             <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle navigation menu</span>
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[400px]">
               <SheetHeader>
@@ -57,7 +57,7 @@ export function MarketplaceNavbar() {
           <div className="h-6 w-px bg-border hidden lg:block mx-2"></div>
           
           <UserNav />
-          <CartButton itemCount={3} />
+          <CartDrawer />
         </div>
       </div>
     </header>

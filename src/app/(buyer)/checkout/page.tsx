@@ -1,8 +1,14 @@
-export default function CheckoutPage() {
+import { fetchUserAddresses } from "@/services/addresses/actions"
+import { CheckoutClient } from "@/components/buyer/checkout-client"
+import { PageContainer } from "@/components/shared/page-container"
+
+export default async function CheckoutPage() {
+  const addresses = await fetchUserAddresses()
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
-      <p className="text-muted-foreground">Complete your purchase.</p>
-    </div>
-  );
+    <PageContainer className="py-8">
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Checkout</h1>
+      <CheckoutClient initialAddresses={addresses} />
+    </PageContainer>
+  )
 }

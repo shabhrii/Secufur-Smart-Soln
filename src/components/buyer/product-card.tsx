@@ -2,10 +2,11 @@ import Link from "next/link"
 import { Star, ShoppingCart } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { AddToCartButton } from "./add-to-cart-button"
 
 export interface ProductCardProps {
   id: string
+  slug?: string
   name: string
   price: number
   compareAtPrice?: number
@@ -18,6 +19,7 @@ export interface ProductCardProps {
 
 export function ProductCard({
   id,
+  slug,
   name,
   price,
   compareAtPrice,
@@ -31,7 +33,7 @@ export function ProductCard({
 
   return (
     <Card className="overflow-hidden flex flex-col h-full group hover:shadow-lg transition-all duration-300 border-border/50">
-      <Link href={`/product/${id}`} className="relative block aspect-square bg-muted overflow-hidden">
+      <Link href={`/product/${slug || id}`} className="relative block aspect-square bg-muted overflow-hidden">
         {isFeatured && (
           <Badge className="absolute top-2 left-2 z-10 bg-primary/90 backdrop-blur-sm">Featured</Badge>
         )}
@@ -50,7 +52,7 @@ export function ProductCard({
           <span className="font-medium text-primary/80">{sellerName}</span>
         </div>
         
-        <Link href={`/product/${id}`} className="block group-hover:text-primary transition-colors">
+        <Link href={`/product/${slug || id}`} className="block group-hover:text-primary transition-colors">
           <h3 className="font-semibold text-base line-clamp-2 leading-tight">{name}</h3>
         </Link>
         
@@ -71,10 +73,16 @@ export function ProductCard({
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full rounded-md shadow-sm" variant="secondary">
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          Add to Cart
-        </Button>
+        <AddToCartButton 
+          className="w-full rounded-md shadow-sm"
+          product={{
+            id,
+            name,
+            price,
+            imageUrl,
+            sellerName
+          }}
+        />
       </CardFooter>
     </Card>
   )

@@ -141,7 +141,8 @@ export default async function ProductsPage({
               return (
                 <ProductCard
                   key={product.id}
-                  id={product.slug}
+                  id={product.id}
+                  slug={product.slug}
                   name={product.name}
                   price={product.price}
                   compareAtPrice={product.compare_at_price || undefined}
