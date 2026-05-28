@@ -1,0 +1,118 @@
+"use client"
+
+import * as React from "react"
+import { createBrowserClient } from "@supabase/ssr"
+import { env } from "@/env"
+import { UploadCloud, X, Loader2, Image as ImageIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+interface ImageUploadProps {
+  value: string[]
+  onChange: (value: string[]) => void
+  onRemove: (url: string) => void
+  disabled?: boolean
+}
+
+export function ImageUpload({
+  value = [],
+  onChange,
+  onRemove,
+  disabled
+}: ImageUploadProps) {
+  const [isUploading, setIsUploading] = React.useState(false)
+
+  const supabase = createBrowserClient(
+    env.NEXT_PUBLIC_SUPABASE_URL!,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    const newUrls: string[] = []
+
+    try {
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
+        const filePath = `products/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file)
+
+        if (uploadError) {
+          throw uploadError
+        }
+
+        const { data } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath)
+
+        newUrls.push(data.publicUrl)
+      }
+      
+      onChange([...value, ...newUrls])
+    } catch (error) {
+      console.error("Error uploading images:", error)
+      alert("Failed to upload image. Please try again.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center gap-4 flex-wrap">
+        {value.map((url) => (
+          <div key={url} className="relative w-[200px] h-[200px] rounded-md overflow-hidden bg-muted group">
+            <div className="z-10 absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button type="button" onClick={() => onRemove(url)} variant="destructive" size="icon">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Primary badge for the first image */}
+            {value.indexOf(url) === 0 && (
+              <div className="absolute bottom-2 left-2 z-10 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded backdrop-blur-sm">
+                Primary Image
+              </div>
+            )}
+            <div 
+              className="w-full h-full object-cover"
+              style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className={cn(
+        "relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg transition-colors bg-muted/20 hover:bg-muted/40",
+        disabled || isUploading ? "opacity-50 cursor-not-allowed border-muted" : "border-muted-foreground/30 hover:border-primary/50 cursor-pointer"
+      )}>
+        {isUploading ? (
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-10 w-10 text-primary animate-spin mb-2" />
+            <p className="text-sm text-muted-foreground">Uploading images...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-muted-foreground">
+            <UploadCloud className="h-10 w-10 mb-2 opacity-50" />
+            <p className="font-medium text-sm">Click or drag images to upload</p>
+            <p className="text-xs mt-1">JPEG, PNG up to 5MB</p>
+          </div>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          disabled={disabled || isUploading}
+          onChange={handleUpload}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+        />
+      </div>
+    </div>
+  )
+}
