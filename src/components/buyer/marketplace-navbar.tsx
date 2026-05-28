@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import { ShieldCheck, Menu } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { SearchBar } from "./search-bar"
@@ -42,8 +43,10 @@ export function MarketplaceNavbar() {
         </div>
 
         {/* Central Search Bar */}
-        <div className="flex-1 max-w-2xl mx-4">
-          <SearchBar />
+        <div className="flex-1 max-w-xl mx-4">
+          <Suspense fallback={<div className="w-full h-10 bg-muted/50 rounded-md hidden md:block animate-pulse" />}>
+            <SearchBar />
+          </Suspense>
         </div>
 
         {/* Right Actions */}
