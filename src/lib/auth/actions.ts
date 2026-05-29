@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { type LoginInput, type BuyerRegisterInput, type SellerRegisterInput } from "@/lib/validations/auth";
+import { type LoginInput, type BuyerRegisterInput, type SellerRegisterInput, type UpgradeSellerInput } from "@/lib/validations/auth";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
@@ -49,6 +49,9 @@ export async function signUpSeller(data: SellerRegisterInput) {
       data: {
         full_name: data.fullName,
         store_name: data.storeName,
+        business_name: data.businessName,
+        business_type: data.businessType,
+        tax_id: data.taxId,
         role: ROLES.SELLER,
       },
     },
@@ -59,6 +62,47 @@ export async function signUpSeller(data: SellerRegisterInput) {
   }
 
   redirect(ROUTES.SELLER.LOGIN);
+}
+
+export async function upgradeBuyerToSeller(data: UpgradeSellerInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be logged in to upgrade your account." };
+  }
+
+  const { data: existingSeller } = await supabase
+    .from("sellers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!existingSeller) {
+    const { error: sellerError } = await supabase.from("sellers").insert({
+      user_id: user.id,
+      store_name: data.storeName,
+      business_name: data.businessName,
+      business_type: data.businessType,
+      tax_id: data.taxId,
+      status: "pending"
+    });
+
+    if (sellerError) {
+      return { error: sellerError.message };
+    }
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ role: ROLES.SELLER })
+    .eq("id", user.id);
+
+  if (profileError) {
+    return { error: profileError.message };
+  }
+
+  redirect(ROUTES.SELLER.DASHBOARD);
 }
 
 export async function signOut() {

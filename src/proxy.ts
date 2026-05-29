@@ -6,10 +6,19 @@ import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
 
 export async function proxy(request: NextRequest) {
-  // 1. Refresh session
   const response = await updateSession(request);
-  
-  // 2. Fetch the current session and profile for route protection
+
+  const currentPath = request.nextUrl.pathname;
+
+  console.log("=================================");
+  console.log("PROXY START:", currentPath);
+
+  console.log(
+    "SUPABASE URL:",
+    env.NEXT_PUBLIC_SUPABASE_URL
+  );
+
+
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL!,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,60 +27,108 @@ export async function proxy(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          // This is just for reading the session, updateSession handles setting cookies
+        setAll() {
+          // handled by updateSession
         },
       },
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const currentPath = request.nextUrl.pathname;
-  
-  // Define protected routes
-  const isSellerRoute = currentPath.startsWith("/seller") && 
-    !currentPath.startsWith(ROUTES.SELLER.LOGIN) && 
-    !currentPath.startsWith(ROUTES.SELLER.REGISTER) && 
-    currentPath !== ROUTES.SELLER.HOME;
-    
-  const isAdminRoute = currentPath.startsWith("/admin");
-  const isAuthRoute = currentPath.startsWith(ROUTES.AUTH.LOGIN) || currentPath.startsWith(ROUTES.AUTH.REGISTER);
+  console.log("FETCHING SESSION...");
 
-  // If no session, redirect protected routes to appropriate login
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  console.log("SESSION USER:", session?.user?.email);
+
+  const isSellerRoute =
+    currentPath.startsWith("/seller") &&
+    !currentPath.startsWith(ROUTES.SELLER.LOGIN) &&
+    !currentPath.startsWith(ROUTES.SELLER.REGISTER) &&
+    currentPath !== ROUTES.SELLER.HOME;
+
+  const isAdminRoute = currentPath.startsWith("/admin");
+
+  const isAuthRoute =
+    currentPath.startsWith(ROUTES.AUTH.LOGIN) ||
+    currentPath.startsWith(ROUTES.AUTH.REGISTER);
+
   if (!session) {
+    console.log("NO SESSION FOUND");
+
     if (isSellerRoute) {
-      return NextResponse.redirect(new URL(ROUTES.SELLER.LOGIN, request.url));
+      console.log("REDIRECTING TO SELLER LOGIN");
+      return NextResponse.redirect(
+        new URL(ROUTES.SELLER.LOGIN, request.url)
+      );
     }
+
     if (isAdminRoute) {
-      return NextResponse.redirect(new URL(ROUTES.AUTH.LOGIN, request.url));
+      console.log("REDIRECTING TO ADMIN LOGIN");
+      return NextResponse.redirect(
+        new URL(ROUTES.AUTH.LOGIN, request.url)
+      );
     }
   } else {
-    // Session exists, let's get the user's role
-    const { data: profile } = await supabase
+    console.log("SESSION EXISTS");
+
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("*")
       .eq("id", session.user.id)
       .single();
-      
-    const role = profile?.role || ROLES.BUYER;
+    console.log("PROFILE:", profile);
+    console.log("PROFILE ERROR:", profileError);
 
-    // Prevent authenticated users from visiting auth pages
+    const role = profile?.role ?? ROLES.BUYER;
+
+    console.log("ROLE:", role);
+
     if (isAuthRoute) {
-      return NextResponse.redirect(new URL(ROUTES.HOME, request.url));
-    }
-    if (currentPath.startsWith(ROUTES.SELLER.LOGIN) || currentPath.startsWith(ROUTES.SELLER.REGISTER)) {
-      return NextResponse.redirect(new URL(ROUTES.SELLER.DASHBOARD, request.url));
+      return NextResponse.redirect(
+        new URL(ROUTES.HOME, request.url)
+      );
     }
 
-    // Role-based protection
-    if (isSellerRoute && role !== ROLES.SELLER && role !== ROLES.ADMIN) {
-      return NextResponse.redirect(new URL(ROUTES.HOME, request.url));
+    if (
+      currentPath.startsWith(ROUTES.SELLER.LOGIN) ||
+      currentPath.startsWith(ROUTES.SELLER.REGISTER)
+    ) {
+      if (
+        role === ROLES.SELLER ||
+        role === ROLES.ADMIN
+      ) {
+        console.log("SELLER DETECTED -> DASHBOARD");
+        return NextResponse.redirect(
+          new URL(ROUTES.SELLER.DASHBOARD, request.url)
+        );
+      }
     }
-    if (isAdminRoute && role !== ROLES.ADMIN) {
-      return NextResponse.redirect(new URL(ROUTES.HOME, request.url));
+
+    if (
+      isSellerRoute &&
+      role !== ROLES.SELLER &&
+      role !== ROLES.ADMIN
+    ) {
+      console.log("SELLER ROUTE BLOCKED");
+      return NextResponse.redirect(
+        new URL(ROUTES.HOME, request.url)
+      );
+    }
+
+    if (
+      isAdminRoute &&
+      role !== ROLES.ADMIN
+    ) {
+      console.log("ADMIN ROUTE BLOCKED");
+      return NextResponse.redirect(
+        new URL(ROUTES.HOME, request.url)
+      );
     }
   }
 
+  console.log("ALLOWING REQUEST");
   return response;
 }
 
