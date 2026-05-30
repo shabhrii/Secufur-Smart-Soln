@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { createBrowserClient } from "@supabase/ssr"
-import { env } from "@/env"
+import { createClient } from "@/lib/supabase/client"
 import { UploadCloud, X, Loader2, Image as ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -21,48 +20,59 @@ export function ImageUpload({
   disabled
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const supabase = createBrowserClient(
-    env.NEXT_PUBLIC_SUPABASE_URL!,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    setIsUploading(true)
-    const newUrls: string[] = []
+    setIsUploading(true);
+    setError(null);
 
     try {
+      const newUrls: string[] = [];
+
       for (const file of Array.from(files)) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-        const filePath = `products/${fileName}`
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+        
+        // Increased to 2 minutes for slower network connections
+        const uploadPromise = supabase.storage
+          .from("product-images")
+          .upload(filePath, file);
 
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file)
+        const timeoutPromise = new Promise<{ data: any, error: any }>((_, reject) => {
+          setTimeout(() => reject(new Error("Upload timed out after 2 minutes. Please check your network connection.")), 120000);
+        });
 
-        if (uploadError) {
-          throw uploadError
-        }
+        const result = await Promise.race([uploadPromise, timeoutPromise]) as { data: any, error: any };
+        const { error: uploadError } = result;
+
+        if (uploadError) throw uploadError;
 
         const { data } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath)
+          .from("product-images")
+          .getPublicUrl(filePath);
 
-        newUrls.push(data.publicUrl)
+        newUrls.push(data.publicUrl);
       }
-      
-      onChange([...value, ...newUrls])
-    } catch (error) {
-      console.error("Error uploading images:", error)
-      alert("Failed to upload image. Please try again.")
+
+      onChange([...value, ...newUrls]);
+    } catch (err) {
+      console.error("UPLOAD FAILED", err);
+      setError(err instanceof Error ? err.message : "Failed to upload image. Please try again.");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
+      // Safely reset the file input using a ref instead of the event target
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     }
-  }
+  };
 
   return (
     <div>
@@ -80,7 +90,7 @@ export function ImageUpload({
                 Primary Image
               </div>
             )}
-            <div 
+            <div
               className="w-full h-full object-cover"
               style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             />
@@ -90,7 +100,8 @@ export function ImageUpload({
 
       <div className={cn(
         "relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg transition-colors bg-muted/20 hover:bg-muted/40",
-        disabled || isUploading ? "opacity-50 cursor-not-allowed border-muted" : "border-muted-foreground/30 hover:border-primary/50 cursor-pointer"
+        disabled || isUploading ? "opacity-50 cursor-not-allowed border-muted" : "border-muted-foreground/30 hover:border-primary/50 cursor-pointer",
+        error ? "border-destructive/50" : ""
       )}>
         {isUploading ? (
           <div className="flex flex-col items-center">
@@ -99,12 +110,13 @@ export function ImageUpload({
           </div>
         ) : (
           <div className="flex flex-col items-center text-muted-foreground">
-            <UploadCloud className="h-10 w-10 mb-2 opacity-50" />
+            <UploadCloud className={cn("h-10 w-10 mb-2 opacity-50", error ? "text-destructive" : "")} />
             <p className="font-medium text-sm">Click or drag images to upload</p>
             <p className="text-xs mt-1">JPEG, PNG up to 5MB</p>
           </div>
         )}
         <input
+          ref={inputRef}
           type="file"
           accept="image/*"
           multiple
@@ -113,6 +125,9 @@ export function ImageUpload({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
         />
       </div>
+      {error && (
+        <p className="text-sm font-medium text-destructive mt-2 text-center">{error}</p>
+      )}
     </div>
   )
 }

@@ -82,6 +82,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   }, [nameValue, initialData, form])
 
   async function onSubmit(data: ProductFormValues) {
+    console.log("SUBMIT DATA", data);
     setIsPending(true)
     try {
       if (initialData?.id) {

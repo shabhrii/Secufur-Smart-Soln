@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const SELLER_NAV_ITEMS = [
   { name: "Dashboard", href: ROUTES.SELLER.DASHBOARD, icon: LayoutDashboard },
-  { name: "Products", href: "#", icon: Package },
+  { name: "Products", href: "/seller/products", icon: Package },
   { name: "Orders", href: "#", icon: ShoppingBag },
   { name: "Settings", href: "#", icon: Settings },
 ]

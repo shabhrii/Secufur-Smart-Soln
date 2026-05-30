@@ -4,10 +4,12 @@ import { fetchCategories } from "@/services/categories"
 import { fetchSellerProductById } from "@/services/seller-products"
 import { notFound } from "next/navigation"
 
-export default async function EditProductPage({ params }: { params: { id: string } }) {
+export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  
   const [categories, product] = await Promise.all([
     fetchCategories(),
-    fetchSellerProductById(params.id)
+    fetchSellerProductById(id)
   ])
 
   if (!product) {

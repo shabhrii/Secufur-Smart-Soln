@@ -148,7 +148,7 @@ export async function updateProduct(productId: string, data: ProductFormValues) 
     const validatedData = productSchema.parse(data)
 
     // 1. Update Product (RLS ensures they can only update their own)
-    const { error: productError } = await supabase
+    const { error: productError, count } = await supabase
       .from("products")
       .update({
         category_id: validatedData.category_id,
@@ -163,11 +163,12 @@ export async function updateProduct(productId: string, data: ProductFormValues) 
         status: validatedData.status,
         featured: validatedData.featured,
         updated_at: new Date().toISOString(),
-      })
+      }, { count: 'exact' })
       .eq("id", productId)
       .eq("seller_id", sellerId)
 
     if (productError) throw new Error(`Product update failed: ${productError.message}`)
+    if (count === 0) throw new Error(`Update blocked: No rows updated. Missing RLS UPDATE policy?`)
 
     // 2. Handle Images: For simplicity, delete existing and re-insert
     if (validatedData.images) {
@@ -207,13 +208,14 @@ export async function deleteProduct(productId: string) {
     const supabase = await getClient()
     const sellerId = await getSellerId(supabase)
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("products")
-      .delete()
+      .delete({ count: 'exact' })
       .eq("id", productId)
       .eq("seller_id", sellerId)
 
     if (error) throw new Error(`Failed to delete product: ${error.message}`)
+    if (count === 0) throw new Error(`Delete blocked: No rows deleted. Missing RLS DELETE policy?`)
 
     revalidatePath("/seller/products")
     revalidatePath("/products")

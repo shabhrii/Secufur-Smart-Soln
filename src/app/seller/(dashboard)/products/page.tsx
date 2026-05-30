@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -104,17 +105,21 @@ export default async function SellerProductsPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/seller/products/${product.id}/edit`}>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" /> Edit
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <Link href={`/seller/products/${product.id}/edit`}>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuItem className="text-destructive p-0">
+                              <form action={deleteProduct.bind(null, product.id)} className="w-full">
+                                <button type="submit" className="w-full flex items-center px-2 py-1.5 cursor-pointer">
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </button>
+                              </form>
                             </DropdownMenuItem>
-                          </Link>
-                          {/* We would typically use a client component wrapper for these mutations */}
-                          {/* For now, they are just placeholders for the actual mutation flow */}
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </DropdownMenuItem>
+                          </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
