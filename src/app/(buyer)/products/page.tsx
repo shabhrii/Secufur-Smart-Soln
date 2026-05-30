@@ -159,7 +159,7 @@ export default async function ProductsPage({
           <div className="p-12 border border-dashed rounded-lg flex flex-col items-center justify-center text-center bg-muted/10 space-y-3">
             <h3 className="text-xl font-semibold">No products found</h3>
             <p className="text-muted-foreground max-w-sm">
-              We couldn't find any products matching your current filters. Try adjusting your search or category selection.
+              We couldn&apos;t find any products matching your current filters. Try adjusting your search or category selection.
             </p>
             <Link 
               href="/products" 

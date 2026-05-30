@@ -14,6 +14,7 @@ export default function CartPage() {
   const cartStore = useCartStore()
 
   React.useEffect(() => {
+    // eslint-disable-next-line
     setIsMounted(true)
   }, [])
 
@@ -39,7 +40,7 @@ export default function CartPage() {
         </div>
         <h1 className="text-3xl font-bold tracking-tight mb-2">Your cart is empty</h1>
         <p className="text-muted-foreground max-w-md mx-auto mb-8">
-          Looks like you haven't added anything to your cart yet. Discover great products from our marketplace sellers.
+          Looks like you haven&apos;t added anything to your cart yet. Discover great products from our marketplace sellers.
         </p>
         <Link href={ROUTES.HOME}>
           <Button size="lg">Start Shopping</Button>

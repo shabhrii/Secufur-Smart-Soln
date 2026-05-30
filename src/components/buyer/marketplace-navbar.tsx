@@ -30,7 +30,7 @@ export function MarketplaceNavbar() {
               <nav className="flex flex-col gap-4 mt-8">
                 <Link href={ROUTES.HOME} className="text-lg font-medium hover:text-primary">Home</Link>
                 <Link href="#" className="text-lg font-medium hover:text-primary">Categories</Link>
-                <Link href="#" className="text-lg font-medium hover:text-primary">Today's Deals</Link>
+                <Link href="#" className="text-lg font-medium hover:text-primary">Today&apos;s Deals</Link>
                 <Link href={ROUTES.SELLER.HOME} className="text-lg font-medium hover:text-primary">Sell on Secufur</Link>
               </nav>
             </SheetContent>

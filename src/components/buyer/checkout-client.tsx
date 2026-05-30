@@ -9,8 +9,20 @@ import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
 
+interface Address {
+  id: string
+  full_name: string
+  address_line_1: string
+  address_line_2?: string
+  city: string
+  state: string
+  postal_code: string
+  country: string
+  phone?: string
+}
+
 interface CheckoutClientProps {
-  initialAddresses: any[]
+  initialAddresses: Address[]
 }
 
 export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
@@ -23,6 +35,7 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
   )
 
   React.useEffect(() => {
+    // eslint-disable-next-line
     setIsMounted(true)
   }, [])
 

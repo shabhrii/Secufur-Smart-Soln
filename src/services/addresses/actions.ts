@@ -29,7 +29,7 @@ export async function fetchUserAddresses() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll() {
           // Ignore in server actions
         },
       },
@@ -67,7 +67,7 @@ export async function createAddress(data: AddressFormValues) {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll() {
           // Ignore in server actions
         },
       },

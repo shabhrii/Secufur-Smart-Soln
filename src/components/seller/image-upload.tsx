@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { createClient } from "@/lib/supabase/client"
-import { UploadCloud, X, Loader2, Image as ImageIcon } from "lucide-react"
+import { UploadCloud, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -23,11 +23,15 @@ export function ImageUpload({
   const [error, setError] = React.useState<string | null>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const supabase = createClient()
+  const supabase = React.useMemo(() => {
+    return createClient();
+  }, [])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      return;
+    }
 
     setIsUploading(true);
     setError(null);
@@ -36,23 +40,56 @@ export function ImageUpload({
       const newUrls: string[] = [];
 
       for (const file of Array.from(files)) {
+        console.log("RUNTIME_MARKER_UPLOAD_V7");
+        console.log(`[ImageUpload] Processing file: ${file.name}`);
         const fileExt = file.name.split(".").pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
         const filePath = `products/${fileName}`;
-        
-        // Increased to 2 minutes for slower network connections
-        const uploadPromise = supabase.storage
-          .from("product-images")
-          .upload(filePath, file);
 
-        const timeoutPromise = new Promise<{ data: any, error: any }>((_, reject) => {
-          setTimeout(() => reject(new Error("Upload timed out after 2 minutes. Please check your network connection.")), 120000);
+        const uploadPromise = (async () => {
+          if ("locks" in navigator) {
+            const lockInfo = await navigator.locks.query();
+            console.log("LOCK INFO", lockInfo);
+          } else {
+            console.log("LOCK INFO unavailable: navigator.locks is not supported");
+          }
+
+          console.log("[ImageUpload] V7 starting timed getSession");
+          console.time("getSession");
+          const sessionResult = await supabase.auth.getSession();
+          console.timeEnd("getSession");
+          console.log("[ImageUpload] AFTER getSession", {
+            hasSession: Boolean(sessionResult.data.session),
+            error: sessionResult.error,
+          });
+
+          return supabase.storage
+            .from("product-images")
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+        })();
+
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        const timeoutPromise = new Promise<{ data: unknown, error: unknown }>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("Upload timed out after 2 minutes. Please check your network connection.")), 120000);
         });
 
-        const result = await Promise.race([uploadPromise, timeoutPromise]) as { data: any, error: any };
+        let result: { data: unknown, error: unknown };
+        try {
+          result = await Promise.race([uploadPromise, timeoutPromise]) as { data: unknown, error: unknown };
+        } finally {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+        }
+
         const { error: uploadError } = result;
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          throw uploadError;
+        }
 
         const { data } = supabase.storage
           .from("product-images")
@@ -67,7 +104,6 @@ export function ImageUpload({
       setError(err instanceof Error ? err.message : "Failed to upload image. Please try again.");
     } finally {
       setIsUploading(false);
-      // Safely reset the file input using a ref instead of the event target
       if (inputRef.current) {
         inputRef.current.value = '';
       }
@@ -84,7 +120,6 @@ export function ImageUpload({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            {/* Primary badge for the first image */}
             {value.indexOf(url) === 0 && (
               <div className="absolute bottom-2 left-2 z-10 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded backdrop-blur-sm">
                 Primary Image

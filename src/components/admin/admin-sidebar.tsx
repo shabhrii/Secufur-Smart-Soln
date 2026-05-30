@@ -15,31 +15,31 @@ const ADMIN_NAV_ITEMS = [
   { name: "Moderation", href: "#", icon: AlertTriangle },
 ]
 
+const NavLinks = ({ pathname }: { pathname: string }) => (
+  <>
+    {ADMIN_NAV_ITEMS.map((item) => {
+      const isActive = pathname === item.href
+      return (
+        <Link
+          key={item.name}
+          href={item.href}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+            isActive 
+              ? "bg-primary/10 text-primary" 
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <item.icon className="w-4 h-4" />
+          {item.name}
+        </Link>
+      )
+    })}
+  </>
+)
+
 export function AdminSidebar() {
   const pathname = usePathname()
-
-  const NavLinks = () => (
-    <>
-      {ADMIN_NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-              isActive 
-                ? "bg-primary/10 text-primary" 
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.name}
-          </Link>
-        )
-      })}
-    </>
-  )
 
   return (
     <>
@@ -55,7 +55,7 @@ export function AdminSidebar() {
             <span className="font-bold">Admin Portal</span>
           </div>
           <div className="flex-1 py-4 px-3 space-y-1">
-            <NavLinks />
+            <NavLinks pathname={pathname} />
           </div>
         </SheetContent>
       </Sheet>
@@ -69,7 +69,7 @@ export function AdminSidebar() {
           </div>
           
           <nav className="flex-1 py-4 px-3 space-y-1">
-            <NavLinks />
+            <NavLinks pathname={pathname} />
           </nav>
         </div>
       </aside>

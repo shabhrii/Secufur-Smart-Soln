@@ -42,19 +42,14 @@ async function getClient() {
 // Actions
 // ----------------------------------------
 
-async function getSellerId(supabase: any) {
+async function getSellerId(supabase: ReturnType<typeof createServerClient>) {
   const { data: userData } = await supabase.auth.getUser()
 
-  console.log("USER:", userData?.user?.id)
-
-  const { data: seller, error } = await supabase
+  const { data: seller } = await supabase
     .from("sellers")
     .select("*")
     .eq("user_id", userData.user.id)
     .single()
-
-  console.log("SELLER DATA:", seller)
-  console.log("SELLER ERROR:", error)
 
   if (!seller) {
     throw new Error("Seller profile not found")
@@ -70,16 +65,7 @@ export async function createProduct(data: ProductFormValues) {
 
     // Validate incoming data
     const validatedData = productSchema.parse(data)
-    console.log("SELLER ID:", sellerId)
-    console.log("CATEGORY ID:", validatedData.category_id)
-    console.log("STATUS:", validatedData.status)
 
-    const {
-      data: { session }
-    } = await supabase.auth.getSession()
-
-    console.log("SESSION ROLE:", session?.user?.role)
-    console.log("SESSION USER ID:", session?.user?.id)
     // 1. Insert Product
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -100,15 +86,8 @@ export async function createProduct(data: ProductFormValues) {
       .select("id")
       .single()
 
-    console.log("PRODUCT:", product)
-    console.log("PRODUCT ERROR:", productError)
-
     if (productError) {
       console.error("FULL PRODUCT ERROR:", JSON.stringify(productError, null, 2))
-    }
-
-    if (productError) {
-      console.log(productError)
       throw new Error(
         `Product creation failed: ${JSON.stringify(productError, null, 2)}`
       )
@@ -133,9 +112,9 @@ export async function createProduct(data: ProductFormValues) {
     revalidatePath("/products")
 
     return { success: true, productId: product.id }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Error creating product:", error)
-    return { success: false, error: error.message || "Failed to create product" }
+    return { success: false, error: error instanceof Error ? error.message : "Failed to create product" }
   }
 }
 
@@ -197,9 +176,9 @@ export async function updateProduct(productId: string, data: ProductFormValues) 
     revalidatePath(`/products`)
 
     return { success: true }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Error updating product:", error)
-    return { success: false, error: error.message || "Failed to update product" }
+    return { success: false, error: error instanceof Error ? error.message : "Failed to update product" }
   }
 }
 
@@ -221,9 +200,9 @@ export async function deleteProduct(productId: string) {
     revalidatePath("/products")
 
     return { success: true }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Error deleting product:", error)
-    return { success: false, error: error.message || "An error occurred" }
+    return { success: false, error: error instanceof Error ? error.message : "An error occurred" }
   }
 }
 
@@ -244,8 +223,8 @@ export async function archiveProduct(productId: string) {
     revalidatePath("/products")
 
     return { success: true }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Error archiving product:", error)
-    return { success: false, error: error.message || "An error occurred" }
+    return { success: false, error: error instanceof Error ? error.message : "An error occurred" }
   }
 }

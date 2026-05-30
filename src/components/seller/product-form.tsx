@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -52,6 +51,7 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   const [isPending, setIsPending] = React.useState(false)
 
   const form = useForm<ProductFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(productSchema) as any,
     defaultValues: initialData || {
       name: "",
@@ -82,7 +82,6 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   }, [nameValue, initialData, form])
 
   async function onSubmit(data: ProductFormValues) {
-    console.log("SUBMIT DATA", data);
     setIsPending(true)
     try {
       if (initialData?.id) {

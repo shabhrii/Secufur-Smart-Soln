@@ -10,7 +10,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
@@ -23,6 +22,7 @@ export function CartDrawer() {
 
   // Prevent hydration errors with Zustand persist
   React.useEffect(() => {
+    // eslint-disable-next-line
     setIsMounted(true)
   }, [])
 
@@ -63,7 +63,7 @@ export function CartDrawer() {
               </div>
               <div>
                 <p className="font-medium text-lg">Your cart is empty</p>
-                <p className="text-muted-foreground text-sm mt-1">Looks like you haven't added anything yet.</p>
+                <p className="text-muted-foreground text-sm mt-1">Looks like you haven&apos;t added anything yet.</p>
               </div>
               <SheetClose render={<Button className="mt-4" />}>
                 Continue Shopping

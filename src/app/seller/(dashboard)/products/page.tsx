@@ -21,7 +21,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { deleteProduct, archiveProduct } from "@/services/seller-products/actions"
+import { deleteProduct } from "@/services/seller-products/actions"
 
 export default async function SellerProductsPage() {
   const products = await fetchSellerProducts()
@@ -58,7 +58,7 @@ export default async function SellerProductsPage() {
             {products.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  You haven't added any products yet.
+                  You haven&apos;t added any products yet.
                 </TableCell>
               </TableRow>
             ) : (
@@ -113,7 +113,10 @@ export default async function SellerProductsPage() {
                               </DropdownMenuItem>
                             </Link>
                             <DropdownMenuItem className="text-destructive p-0">
-                              <form action={deleteProduct.bind(null, product.id)} className="w-full">
+                              <form action={async () => {
+                                "use server"
+                                await deleteProduct(product.id)
+                              }} className="w-full">
                                 <button type="submit" className="w-full flex items-center px-2 py-1.5 cursor-pointer">
                                   <Trash2 className="mr-2 h-4 w-4" /> Delete
                                 </button>

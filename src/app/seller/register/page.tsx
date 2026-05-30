@@ -21,13 +21,10 @@ export default function SellerRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const supabase = useMemo(() => {
-    console.log("CREATING SUPABASE ONCE");
     return createClient();
   }, []);
   useEffect(() => {
     const checkSession = async () => {
-      console.log("CHECK SESSION START");
-
       try {
         const timeout = new Promise((_, reject) =>
           setTimeout(() => reject(new Error("getSession timeout after 5s")), 5000)
@@ -38,13 +35,12 @@ export default function SellerRegisterPage() {
           timeout,
         ]);
 
-        console.log("SESSION RESULT:", result);
-
-        //setIsAuthenticated(!!result.data.session);
-      } catch (err) {
-        console.error("SESSION ERROR:", err);
+        const data = (result as { data: { session: unknown } })?.data;
+        if (data?.session) {
+          setIsAuthenticated(true);
+        }
+      } catch {
       } finally {
-        console.log("CLEARING SPINNER");
         setIsCheckingAuth(false);
       }
     };
@@ -89,11 +85,7 @@ export default function SellerRegisterPage() {
       setIsLoading(false);
     }
   };
-  console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log(
-    "ANON KEY EXISTS:",
-    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+
   if (isCheckingAuth) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[80vh]">
