@@ -29,7 +29,15 @@ import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { ImageUpload } from "./image-upload"
 import { Loader2 } from "lucide-react"
-import { createProduct, updateProduct, productSchema, type ProductFormValues } from "@/services/seller-products/actions"
+import {
+  createProduct,
+  updateProduct,
+} from "@/services/seller-products/actions"
+
+import {
+  productSchema,
+  type ProductFormValues,
+} from "@/validations/product"
 import { type Category } from "@/types/database"
 
 
@@ -101,15 +109,15 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-4xl">
-        
+
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold tracking-tight">
             {initialData ? "Edit Product" : "Create New Product"}
           </h2>
           <div className="flex items-center gap-4">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => router.back()}
               disabled={isPending}
             >
@@ -166,10 +174,10 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Short Description</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Brief summary for product cards..." 
-                          className="resize-none h-20" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Brief summary for product cards..."
+                          className="resize-none h-20"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -183,10 +191,10 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Full Description</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Detailed product description..." 
-                          className="min-h-[150px]" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Detailed product description..."
+                          className="min-h-[150px]"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -258,8 +266,10 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={field.onChange}
+                      >                        <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
@@ -322,11 +332,11 @@ export function ProductForm({ initialData, categories }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Compare at Price ($)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          {...field} 
-                          value={field.value || ''} 
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          value={field.value || ''}
                         />
                       </FormControl>
                       <FormDescription>Shows a crossed-out discount</FormDescription>

@@ -1,10 +1,12 @@
 "use server"
-
+import {
+  productSchema,
+  type ProductFormValues,
+} from "@/validations/product";
 import { createServerClient } from "@supabase/ssr"
 import { env } from "@/env"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
 
 async function getClient() {
   const cookieStore = await cookies()
@@ -35,22 +37,6 @@ async function getClient() {
 // ----------------------------------------
 // Validation Schemas
 // ----------------------------------------
-export const productSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  slug: z.string().min(3, "Slug must be at least 3 characters"),
-  category_id: z.string().min(1, "Category is required"),
-  short_description: z.string().optional(),
-  description: z.string().optional(),
-  price: z.coerce.number().min(0.01, "Price must be greater than 0"),
-  compare_at_price: z.coerce.number().optional().nullable(),
-  stock_quantity: z.coerce.number().int().min(0, "Stock cannot be negative"),
-  sku: z.string().optional(),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  featured: z.boolean().default(false),
-  images: z.array(z.string().url()).optional()
-})
-
-export type ProductFormValues = z.infer<typeof productSchema>
 
 // ----------------------------------------
 // Actions
@@ -58,15 +44,22 @@ export type ProductFormValues = z.infer<typeof productSchema>
 
 async function getSellerId(supabase: any) {
   const { data: userData } = await supabase.auth.getUser()
-  if (!userData?.user) throw new Error("Unauthorized")
 
-  const { data: seller } = await supabase
+  console.log("USER:", userData?.user?.id)
+
+  const { data: seller, error } = await supabase
     .from("sellers")
-    .select("id")
+    .select("*")
     .eq("user_id", userData.user.id)
     .single()
 
-  if (!seller) throw new Error("Seller profile not found")
+  console.log("SELLER DATA:", seller)
+  console.log("SELLER ERROR:", error)
+
+  if (!seller) {
+    throw new Error("Seller profile not found")
+  }
+
   return seller.id
 }
 
@@ -77,7 +70,16 @@ export async function createProduct(data: ProductFormValues) {
 
     // Validate incoming data
     const validatedData = productSchema.parse(data)
+    console.log("SELLER ID:", sellerId)
+    console.log("CATEGORY ID:", validatedData.category_id)
+    console.log("STATUS:", validatedData.status)
 
+    const {
+      data: { session }
+    } = await supabase.auth.getSession()
+
+    console.log("SESSION ROLE:", session?.user?.role)
+    console.log("SESSION USER ID:", session?.user?.id)
     // 1. Insert Product
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -98,8 +100,19 @@ export async function createProduct(data: ProductFormValues) {
       .select("id")
       .single()
 
-    if (productError) throw new Error(`Product creation failed: ${productError.message}`)
+    console.log("PRODUCT:", product)
+    console.log("PRODUCT ERROR:", productError)
 
+    if (productError) {
+      console.error("FULL PRODUCT ERROR:", JSON.stringify(productError, null, 2))
+    }
+
+    if (productError) {
+      console.log(productError)
+      throw new Error(
+        `Product creation failed: ${JSON.stringify(productError, null, 2)}`
+      )
+    }
     // 2. Insert Images (if any)
     if (validatedData.images && validatedData.images.length > 0) {
       const imageRecords = validatedData.images.map((url, index) => ({
@@ -118,7 +131,7 @@ export async function createProduct(data: ProductFormValues) {
 
     revalidatePath("/seller/products")
     revalidatePath("/products")
-    
+
     return { success: true, productId: product.id }
   } catch (error: any) {
     console.error("Error creating product:", error)
@@ -181,7 +194,7 @@ export async function updateProduct(productId: string, data: ProductFormValues) 
 
     revalidatePath("/seller/products")
     revalidatePath(`/products`)
-    
+
     return { success: true }
   } catch (error: any) {
     console.error("Error updating product:", error)
@@ -204,7 +217,7 @@ export async function deleteProduct(productId: string) {
 
     revalidatePath("/seller/products")
     revalidatePath("/products")
-    
+
     return { success: true }
   } catch (error: any) {
     console.error("Error deleting product:", error)
@@ -227,7 +240,7 @@ export async function archiveProduct(productId: string) {
 
     revalidatePath("/seller/products")
     revalidatePath("/products")
-    
+
     return { success: true }
   } catch (error: any) {
     console.error("Error archiving product:", error)
