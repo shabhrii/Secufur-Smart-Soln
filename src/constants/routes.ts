@@ -9,15 +9,19 @@ export const ROUTES = {
     PRODUCT_DETAIL: (id: string) => `/product/${id}`,
     CART: "/cart",
     CHECKOUT: "/checkout",
+    ORDERS: "/orders",
+    ORDER_DETAIL: (id: string) => `/orders/${id}`,
   },
   SELLER: {
     HOME: "/seller",
     LOGIN: "/seller/login",
     REGISTER: "/seller/register",
     DASHBOARD: "/seller/dashboard",
+    ORDERS: "/seller/orders",
   },
   ADMIN: {
     HOME: "/admin",
     DASHBOARD: "/admin/dashboard",
   },
 } as const;
+

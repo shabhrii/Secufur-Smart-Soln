@@ -1,13 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useCartStore } from "@/store/cart-store"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MapPin, CreditCard, ShoppingCart as CartIcon, Truck, CheckCircle2, Plus } from "lucide-react"
+import { MapPin, ShoppingCart as CartIcon, Truck, CheckCircle2, Plus, Loader2, AlertCircle } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
+import { createOrder } from "@/services/orders/actions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AddressForm } from "./address-form"
 
 interface Address {
   id: string
@@ -27,15 +31,8 @@ interface CheckoutClientProps {
 
 export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
   const [isMounted, setIsMounted] = React.useState(false)
-  const cartStore = useCartStore()
-  
-  // Basic state for the foundation layout
-  const [selectedAddress, setSelectedAddress] = React.useState<string | null>(
-    initialAddresses.length > 0 ? initialAddresses[0].id : null
-  )
 
   React.useEffect(() => {
-    // eslint-disable-next-line
     setIsMounted(true)
   }, [])
 
@@ -47,11 +44,34 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
     )
   }
 
-  const { items, getSubtotal } = cartStore
+  return <CheckoutContent initialAddresses={initialAddresses} />
+}
+
+function CheckoutContent({ initialAddresses }: CheckoutClientProps) {
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [orderError, setOrderError] = React.useState<string | null>(null)
+  const [isAddressModalOpen, setIsAddressModalOpen] = React.useState(false)
+  const cartStore = useCartStore()
+  
+  const [selectedAddress, setSelectedAddress] = React.useState<string | null>(
+    initialAddresses.length > 0 ? initialAddresses[0].id : null
+  )
+
+  const prevAddressesRef = React.useRef(initialAddresses.length)
+  React.useEffect(() => {
+    if (initialAddresses.length > prevAddressesRef.current) {
+      setSelectedAddress(initialAddresses[0].id)
+    } else if (initialAddresses.length > 0 && !selectedAddress) {
+      setSelectedAddress(initialAddresses[0].id)
+    }
+    prevAddressesRef.current = initialAddresses.length
+  }, [initialAddresses, selectedAddress])
+
+  const { items, getSubtotal, clearCart } = cartStore
   const subtotal = getSubtotal()
   const shipping = items.length > 0 ? 15.00 : 0
-  const tax = subtotal * 0.08
-  const total = subtotal + shipping + tax
+  const total = subtotal + shipping
 
   if (items.length === 0) {
     return (
@@ -64,6 +84,49 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
         </Link>
       </div>
     )
+  }
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      setOrderError("Please select a shipping address.")
+      return
+    }
+
+    setIsSubmitting(true)
+    setOrderError(null)
+
+    try {
+      const result = await createOrder({
+        addressId: selectedAddress,
+        items: items.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+      })
+
+      if (result.success && result.orderId) {
+        clearCart()
+        router.push(`/orders/${result.orderId}/success`)
+      } else {
+        if (result.stockErrors && result.stockErrors.length > 0) {
+          const stockMessages = result.stockErrors.map(
+            e => `"${e.productName}" — only ${e.available} available (you requested ${e.requested})`
+          )
+          setOrderError(`Stock issue:\n${stockMessages.join("\n")}`)
+        } else {
+          setOrderError(result.error || "Failed to place order. Please try again.")
+        }
+      }
+    } catch {
+      setOrderError("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleAddressSuccess = () => {
+    setIsAddressModalOpen(false)
+    router.refresh()
   }
 
   return (
@@ -105,27 +168,56 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
                 ))}
                 
                 {/* Add New Address Placeholder Box */}
-                <div className="border border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors min-h-[140px]">
-                  <Plus className="h-8 w-8 mb-2" />
-                  <span className="font-medium">Add New Address</span>
-                </div>
+                <Dialog open={isAddressModalOpen} onOpenChange={setIsAddressModalOpen}>
+                  <DialogTrigger 
+                    render={
+                      <div className="border border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors min-h-[140px]" />
+                    }
+                  >
+                    <Plus className="h-8 w-8 mb-2" />
+                    <span className="font-medium">Add New Address</span>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Address</DialogTitle>
+                    </DialogHeader>
+                    <AddressForm 
+                      onSuccess={handleAddressSuccess} 
+                      onCancel={() => setIsAddressModalOpen(false)} 
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             ) : (
               <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
                 <MapPin className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
                 <h3 className="font-medium text-lg mb-1">No addresses found</h3>
                 <p className="text-sm text-muted-foreground mb-4">Please add a shipping address to continue.</p>
-                <Button variant="outline">Add Address</Button>
+                
+                <Dialog open={isAddressModalOpen} onOpenChange={setIsAddressModalOpen}>
+                  <DialogTrigger render={<Button variant="outline" />}>
+                    Add Address
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Address</DialogTitle>
+                    </DialogHeader>
+                    <AddressForm 
+                      onSuccess={handleAddressSuccess} 
+                      onCancel={() => setIsAddressModalOpen(false)} 
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Step 2: Shipping Method (Static Foundation) */}
-        <Card className="opacity-80">
-          <CardHeader className="flex flex-row items-center gap-4 bg-muted/10 pb-4">
-            <div className="bg-muted text-muted-foreground w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
-            <CardTitle className="text-xl text-muted-foreground">Shipping Method</CardTitle>
+        {/* Step 2: Shipping Method */}
+        <Card className={selectedAddress ? "" : "opacity-60"}>
+          <CardHeader className="flex flex-row items-center gap-4 bg-muted/30 pb-4">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${selectedAddress ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</div>
+            <CardTitle className={`text-xl ${selectedAddress ? "" : "text-muted-foreground"}`}>Shipping Method</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="border rounded-lg p-4 flex items-center justify-between border-primary bg-primary/5">
@@ -138,21 +230,6 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
               </div>
               <p className="font-semibold">$15.00</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Step 3: Payment (Static Placeholder) */}
-        <Card className="opacity-80">
-          <CardHeader className="flex flex-row items-center gap-4 bg-muted/10 pb-4">
-            <div className="bg-muted text-muted-foreground w-8 h-8 rounded-full flex items-center justify-center font-bold">3</div>
-            <CardTitle className="text-xl text-muted-foreground">Payment Method</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 text-center py-10">
-            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium">Secure Payment Integration</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-              The Razorpay payment gateway will be mounted here in the next phase of development.
-            </p>
           </CardContent>
         </Card>
 
@@ -200,10 +277,6 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
               <span className="text-muted-foreground">Shipping</span>
               <span className="font-medium">${shipping.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Estimated Tax</span>
-              <span className="font-medium">${tax.toFixed(2)}</span>
-            </div>
             
             <Separator className="my-4" />
             
@@ -212,14 +285,30 @@ export function CheckoutClient({ initialAddresses }: CheckoutClientProps) {
               <span>${total.toFixed(2)}</span>
             </div>
           </div>
+
+          {/* Error message */}
+          {orderError && (
+            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-2 items-start">
+              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-destructive whitespace-pre-line">{orderError}</p>
+            </div>
+          )}
           
-          {/* Fake Submit */}
+          {/* Place Order */}
           <Button 
             size="lg" 
             className="w-full mt-6 h-12 text-base" 
-            disabled={!selectedAddress}
+            disabled={!selectedAddress || isSubmitting}
+            onClick={handlePlaceOrder}
           >
-            Continue to Payment
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Placing Order...
+              </>
+            ) : (
+              "Place Order"
+            )}
           </Button>
           
           <p className="text-xs text-muted-foreground text-center mt-4">

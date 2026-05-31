@@ -10,7 +10,7 @@ export const productSchema = z.object({
   compare_at_price: z.coerce.number().optional().nullable(),
   stock_quantity: z.coerce.number().int().min(0, "Stock cannot be negative"),
   sku: z.string().optional(),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
+  status: z.enum(["draft", "active", "archived"]).default("active"),
   featured: z.boolean().default(false),
   images: z.array(z.string().url()).optional()
 });

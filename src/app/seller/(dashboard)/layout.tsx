@@ -1,11 +1,30 @@
 import { SellerSidebar } from "@/components/seller/seller-sidebar";
 import { Store } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export default function SellerLayout({
+export default async function SellerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/seller/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "seller") {
+    redirect("/");
+  }
+
   return (
     <div className="flex min-h-screen bg-muted/40 relative">
       <SellerSidebar />

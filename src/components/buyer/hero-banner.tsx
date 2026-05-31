@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function HeroBanner() {
   return (
@@ -23,12 +24,16 @@ export function HeroBanner() {
             Shop from thousands of verified sellers offering the best deals on the market. Secure checkout and fast delivery guaranteed.
           </p>
           <div className="flex items-center gap-4 pt-4">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8">
-              Shop Now
-            </Button>
-            <Button size="lg" variant="outline" className="text-white border-white/20 hover:bg-white/10 rounded-full px-8">
-              Explore Deals
-            </Button>
+            <Link href="/products">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8">
+                Shop Now
+              </Button>
+            </Link>
+            <Link href="/products?sort=price_asc">
+              <Button size="lg" variant="outline" className="text-white border-white/20 hover:bg-white/10 hover:text-white bg-transparent rounded-full px-8">
+                Explore Deals
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

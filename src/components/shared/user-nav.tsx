@@ -28,6 +28,9 @@ export function UserNav() {
             Admin
           </Link>
         )}
+        <Link href={ROUTES.BUYER.ORDERS} className="text-sm font-medium hover:underline hidden md:inline-block">
+          My Orders
+        </Link>
         
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-sm font-medium">

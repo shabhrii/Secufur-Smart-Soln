@@ -11,8 +11,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 const SELLER_NAV_ITEMS = [
   { name: "Dashboard", href: ROUTES.SELLER.DASHBOARD, icon: LayoutDashboard },
   { name: "Products", href: "/seller/products", icon: Package },
-  { name: "Orders", href: "#", icon: ShoppingBag },
-  { name: "Settings", href: "#", icon: Settings },
+  { name: "Orders", href: ROUTES.SELLER.ORDERS, icon: ShoppingBag },
+  { name: "Settings", href: "/seller/settings", icon: Settings },
 ]
 
 const NavLinks = ({ pathname }: { pathname: string }) => (

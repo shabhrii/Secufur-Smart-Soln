@@ -19,9 +19,9 @@ export default function BuyerLayout({
         <div className="container mx-auto px-4 flex flex-col items-center justify-between gap-4 md:flex-row text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Secufur Marketplace. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-primary transition-colors">Help Center</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Help Center</Link>
           </div>
         </div>
       </footer>

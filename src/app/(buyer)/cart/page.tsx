@@ -11,10 +11,8 @@ import { ROUTES } from "@/constants/routes"
 
 export default function CartPage() {
   const [isMounted, setIsMounted] = React.useState(false)
-  const cartStore = useCartStore()
 
   React.useEffect(() => {
-    // eslint-disable-next-line
     setIsMounted(true)
   }, [])
 
@@ -29,6 +27,11 @@ export default function CartPage() {
     )
   }
 
+  return <CartContent />
+}
+
+function CartContent() {
+  const cartStore = useCartStore()
   const { items, updateQuantity, removeItem, getSubtotal } = cartStore
   const subtotal = getSubtotal()
 

@@ -70,3 +70,79 @@ export interface Product {
   sellers?: Seller;
   product_images?: ProductImage[];
 }
+
+export interface Address {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  address_line_1: string;
+  address_line_2: string | null;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface Order {
+  id: string;
+  user_id: string | null;
+  address_id: string | null;
+  order_status: OrderStatus;
+  payment_status: PaymentStatus;
+  subtotal: number;
+  shipping_cost: number;
+  total_amount: number;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  seller_id: string | null;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
+
+// Extended types with Supabase joins for display
+
+export interface OrderItemWithDetails extends OrderItem {
+  products: {
+    name: string;
+    slug: string;
+    product_images: { image_url: string; is_primary: boolean }[];
+  } | null;
+  sellers: {
+    store_name: string;
+  } | null;
+}
+
+export interface OrderWithItems extends Order {
+  order_items: OrderItemWithDetails[];
+  addresses: Address | null;
+}
+
+export interface SellerOrderItem extends OrderItem {
+  products: {
+    name: string;
+    slug: string;
+    product_images: { image_url: string; is_primary: boolean }[];
+  } | null;
+  orders: {
+    id: string;
+    order_status: OrderStatus;
+    payment_status: PaymentStatus;
+    created_at: string;
+    total_amount: number;
+    profiles: {
+      full_name: string | null;
+    } | null;
+  } | null;
+}
