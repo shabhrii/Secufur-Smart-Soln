@@ -1,9 +1,10 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package } from "lucide-react"
+import { Package, ChevronRight } from "lucide-react"
 import { formatCurrency, formatDate } from "@/lib/utils/formatters"
 import { type OrderStatus } from "@/types/database"
+import Link from "next/link"
 
 interface OrderRow {
   orderId: string
@@ -70,14 +71,17 @@ export function OrdersTable({ orders, title = "Recent Orders" }: OrdersTableProp
               <TableHead>Items</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-8"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.orderId}>
+              <TableRow key={order.orderId} className="group cursor-pointer">
                 <TableCell className="font-mono font-medium text-sm">
-                  #{order.orderId.slice(0, 8).toUpperCase()}
+                  <Link href={`/seller/orders/${order.orderId}`} className="text-primary hover:underline">
+                    #{order.orderId.slice(0, 8).toUpperCase()}
+                  </Link>
                 </TableCell>
                 <TableCell>{order.customerName}</TableCell>
                 <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
@@ -85,7 +89,12 @@ export function OrdersTable({ orders, title = "Recent Orders" }: OrdersTableProp
                 </TableCell>
                 <TableCell className="text-muted-foreground">{formatDate(order.date)}</TableCell>
                 <TableCell className="font-medium">{formatCurrency(order.total)}</TableCell>
-                <TableCell className="text-right">{getStatusBadge(order.status)}</TableCell>
+                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell>
+                  <Link href={`/seller/orders/${order.orderId}`}>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </Link>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -94,3 +103,4 @@ export function OrdersTable({ orders, title = "Recent Orders" }: OrdersTableProp
     </Card>
   )
 }
+

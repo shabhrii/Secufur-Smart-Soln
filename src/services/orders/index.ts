@@ -141,3 +141,70 @@ export async function fetchSellerOrders(): Promise<SellerOrderItem[]> {
 
   return (data as unknown as SellerOrderItem[]) || []
 }
+
+// ─── Seller: Fetch single order detail ──────────────────────────────
+
+const SELLER_ORDER_DETAIL_QUERY = `
+  *,
+  addresses ( * ),
+  profiles:user_id (
+    full_name,
+    phone
+  ),
+  order_items (
+    *,
+    products (
+      name,
+      slug,
+      product_images ( image_url, is_primary )
+    ),
+    sellers (
+      store_name
+    )
+  )
+`
+
+export async function fetchSellerOrderDetail(orderId: string): Promise<OrderWithItems | null> {
+  const supabase = await getClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
+  // Get seller record
+  const { data: seller } = await supabase
+    .from("sellers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!seller) {
+    return null
+  }
+
+  // Fetch the order — we verify seller ownership by checking order_items
+  const { data, error } = await supabase
+    .from("orders")
+    .select(SELLER_ORDER_DETAIL_QUERY)
+    .eq("id", orderId)
+    .single()
+
+  if (error || !data) {
+    console.error("Error fetching seller order detail:", error)
+    return null
+  }
+
+  // Verify this seller has at least one item in the order
+  const orderData = data as unknown as OrderWithItems & { profiles: { full_name: string | null; phone: string | null } | null }
+  const sellerHasItems = orderData.order_items.some(
+    (item: { seller_id: string | null }) => item.seller_id === seller.id
+  )
+
+  if (!sellerHasItems) {
+    return null
+  }
+
+  return orderData
+}

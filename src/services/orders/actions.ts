@@ -82,3 +82,60 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
   return result
 }
+
+// ─── Update Order Status (Seller Fulfillment) ───────────────────────
+
+interface UpdateOrderStatusResult {
+  success: boolean
+  error?: string
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: string
+): Promise<UpdateOrderStatusResult> {
+  const supabase = await getClient()
+
+  // 1. Authenticate
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { success: false, error: "You must be logged in." }
+  }
+
+  // 2. Resolve seller ID
+  const { data: seller } = await supabase
+    .from("sellers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!seller) {
+    return { success: false, error: "Seller profile not found." }
+  }
+
+  // 3. Call the atomic RPC
+  const { data, error } = await supabase.rpc("update_order_status", {
+    p_order_id: orderId,
+    p_new_status: newStatus,
+    p_seller_id: seller.id,
+  })
+
+  if (error) {
+    console.error("RPC Error updating order status:", error)
+    return { success: false, error: "Failed to update order status." }
+  }
+
+  const result = data as unknown as UpdateOrderStatusResult
+
+  // 4. Revalidate all related pages
+  if (result.success) {
+    revalidatePath("/orders")
+    revalidatePath(`/orders/${orderId}`)
+    revalidatePath("/seller/orders")
+    revalidatePath(`/seller/orders/${orderId}`)
+    revalidatePath("/seller/dashboard")
+  }
+
+  return result
+}
