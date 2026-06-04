@@ -33,6 +33,7 @@ export async function fetchFeaturedProducts(limit = 10): Promise<Product[]> {
     .from("products")
     .select(PRODUCT_SELECT_QUERY)
     .eq("status", "active")
+    .eq("moderation_status", "approved")
     .eq("featured", true)
     .limit(limit)
 
@@ -65,6 +66,7 @@ export async function fetchAllProducts({
     .from("products")
     .select(PRODUCT_SELECT_QUERY, { count: 'exact' })
     .eq("status", "active")
+    .eq("moderation_status", "approved")
 
   if (categorySlug) {
     // First fetch the category to get its ID
@@ -107,6 +109,7 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
     .from("products")
     .select(PRODUCT_SELECT_QUERY)
     .eq("status", "active")
+    .eq("moderation_status", "approved")
     .eq("slug", slug)
     .single()
 

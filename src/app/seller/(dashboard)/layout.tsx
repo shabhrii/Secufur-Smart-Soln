@@ -21,7 +21,7 @@ export default async function SellerLayout({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "seller") {
+  if (profile?.role !== "seller" && profile?.role !== "admin") {
     redirect("/");
   }
 

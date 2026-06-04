@@ -3,30 +3,41 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { ShieldCheck, Users, ShoppingBag, AlertTriangle, Menu } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  ShieldCheck,
+  LayoutDashboard,
+  Users,
+  Store,
+  Package,
+  ShoppingBag,
+  Settings,
+  Menu,
+} from "lucide-react"
 
 const ADMIN_NAV_ITEMS = [
-  { name: "Dashboard", href: ROUTES.ADMIN.DASHBOARD, icon: ShieldCheck },
-  { name: "Users & Sellers", href: "#", icon: Users },
-  { name: "All Orders", href: "#", icon: ShoppingBag },
-  { name: "Moderation", href: "#", icon: AlertTriangle },
+  { name: "Dashboard", href: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard },
+  { name: "Users", href: ROUTES.ADMIN.USERS, icon: Users },
+  { name: "Sellers", href: ROUTES.ADMIN.SELLERS, icon: Store },
+  { name: "Products", href: ROUTES.ADMIN.PRODUCTS, icon: Package },
+  { name: "Orders", href: ROUTES.ADMIN.ORDERS, icon: ShoppingBag },
+  { name: "Settings", href: ROUTES.ADMIN.SETTINGS, icon: Settings },
 ]
 
 const NavLinks = ({ pathname }: { pathname: string }) => (
   <>
     {ADMIN_NAV_ITEMS.map((item) => {
-      const isActive = pathname === item.href
+      const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
       return (
         <Link
           key={item.name}
           href={item.href}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-            isActive 
-              ? "bg-primary/10 text-primary" 
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+            isActive
+              ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >

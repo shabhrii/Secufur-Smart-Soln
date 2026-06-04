@@ -22,6 +22,11 @@ export const ROUTES = {
   ADMIN: {
     HOME: "/admin",
     DASHBOARD: "/admin/dashboard",
+    USERS: "/admin/users",
+    SELLERS: "/admin/sellers",
+    PRODUCTS: "/admin/products",
+    ORDERS: "/admin/orders",
+    SETTINGS: "/admin/settings",
   },
 } as const;
 

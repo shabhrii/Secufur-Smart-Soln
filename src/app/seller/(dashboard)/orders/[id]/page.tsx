@@ -53,8 +53,6 @@ export default async function SellerOrderDetailPage({ params }: { params: Promis
     notFound()
   }
 
-  // Extract buyer profile joined via profiles:user_id
-  const orderWithProfile = order as typeof order & { profiles: { full_name: string | null; phone: string | null } | null }
 
   return (
     <DashboardShell>
@@ -150,13 +148,16 @@ export default async function SellerOrderDetailPage({ params }: { params: Promis
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
-              <p className="font-medium">{orderWithProfile.profiles?.full_name || "Unknown Customer"}</p>
-              <p className="text-muted-foreground">{orderWithProfile.profiles?.phone || "No phone provided"}</p>
+              <p className="font-medium">{order.buyer_name || "Unknown Customer"}</p>
+              {order.buyer_email && (
+                <p className="text-muted-foreground">{order.buyer_email}</p>
+              )}
+              <p className="text-muted-foreground">{order.buyer_phone || "No phone provided"}</p>
             </CardContent>
           </Card>
 
           {/* Shipping Address */}
-          {order.addresses && (
+          {order.shipping_address_json && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -164,17 +165,17 @@ export default async function SellerOrderDetailPage({ params }: { params: Promis
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm space-y-1">
-                <p className="font-medium">{order.addresses.full_name}</p>
-                <p className="text-muted-foreground">{order.addresses.address_line_1}</p>
-                {order.addresses.address_line_2 && (
-                  <p className="text-muted-foreground">{order.addresses.address_line_2}</p>
+                <p className="font-medium">{order.shipping_address_json.full_name}</p>
+                <p className="text-muted-foreground">{order.shipping_address_json.address_line_1}</p>
+                {order.shipping_address_json.address_line_2 && (
+                  <p className="text-muted-foreground">{order.shipping_address_json.address_line_2}</p>
                 )}
                 <p className="text-muted-foreground">
-                  {order.addresses.city}, {order.addresses.state} {order.addresses.postal_code}
+                  {order.shipping_address_json.city}, {order.shipping_address_json.state} {order.shipping_address_json.postal_code}
                 </p>
-                <p className="text-muted-foreground">{order.addresses.country}</p>
-                {order.addresses.phone && (
-                  <p className="text-muted-foreground mt-2">{order.addresses.phone}</p>
+                <p className="text-muted-foreground">{order.shipping_address_json.country}</p>
+                {order.shipping_address_json.phone && (
+                  <p className="text-muted-foreground mt-2">{order.shipping_address_json.phone}</p>
                 )}
               </CardContent>
             </Card>

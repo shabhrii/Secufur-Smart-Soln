@@ -1,11 +1,31 @@
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { ShieldCheck } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Server-side admin guard (defense in depth — middleware also blocks)
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    redirect("/");
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900/50 relative">
       <AdminSidebar />

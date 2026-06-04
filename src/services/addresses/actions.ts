@@ -1,9 +1,10 @@
 "use server"
 
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { cookies } from "next/headers"
+import { createServerClient } from "@supabase/ssr"
 
 const addressSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -20,21 +21,7 @@ const addressSchema = z.object({
 export type AddressFormValues = z.infer<typeof addressSchema>
 
 export async function fetchUserAddresses() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll() {
-          // Ignore in server actions
-        },
-      },
-    }
-  )
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -58,7 +45,10 @@ export async function fetchUserAddresses() {
 }
 
 export async function createAddress(data: AddressFormValues) {
-  const cookieStore = await cookies()
+  console.log("\n[ACTION] ---> createAddress START");
+  const cookieStore = await cookies();
+  console.log("[ACTION] cookies().getAll():", cookieStore.getAll().map(c => c.name));
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -74,7 +64,8 @@ export async function createAddress(data: AddressFormValues) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  console.log("[ACTION] supabase.auth.getUser() -> user:", user?.id || null, "| error:", authError?.message || null);
 
   if (!user) {
     return { success: false, error: "You must be logged in to add an address" }

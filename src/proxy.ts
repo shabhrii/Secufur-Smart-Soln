@@ -6,9 +6,12 @@ import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
 
 export async function proxy(request: NextRequest) {
-  const response = await updateSession(request);
-
   const currentPath = request.nextUrl.pathname;
+
+  // Bypass static files and API routes (or let the matcher handle it)
+  // The matcher already bypasses most statics, but just in case.
+
+  const response = await updateSession(request);
 
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,9 +21,7 @@ export async function proxy(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll() {
-          // handled by updateSession
-        },
+        setAll() {},
       },
     }
   );
@@ -29,6 +30,45 @@ export async function proxy(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  let role: string = ROLES.BUYER;
+  if (session) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+    if (profile?.role) {
+      role = profile.role;
+    }
+  }
+
+  // 1. Maintenance Mode Check
+  // We fetch settings. If table doesn't exist, it falls back gracefully (returns error).
+  if (currentPath !== "/maintenance") {
+    const { data: settings } = await supabase
+      .from("marketplace_settings")
+      .select("maintenance_mode")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (settings?.maintenance_mode && role !== ROLES.ADMIN) {
+      return NextResponse.redirect(new URL("/maintenance", request.url));
+    }
+  } else if (currentPath === "/maintenance") {
+    // If we are on /maintenance, check if we need to be here
+    const { data: settings } = await supabase
+      .from("marketplace_settings")
+      .select("maintenance_mode")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (!settings?.maintenance_mode || role === ROLES.ADMIN) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return response;
+  }
+
+  // 2. Auth & Roles Enforcement
   const isSellerRoute =
     currentPath.startsWith("/seller") &&
     !currentPath.startsWith(ROUTES.SELLER.LOGIN) &&
@@ -54,14 +94,6 @@ export async function proxy(request: NextRequest) {
       );
     }
   } else {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-
-    const role = profile?.role ?? ROLES.BUYER;
-
     if (isAuthRoute) {
       return NextResponse.redirect(
         new URL(ROUTES.HOME, request.url)
@@ -112,7 +144,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

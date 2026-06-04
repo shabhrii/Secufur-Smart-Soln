@@ -146,11 +146,6 @@ export async function fetchSellerOrders(): Promise<SellerOrderItem[]> {
 
 const SELLER_ORDER_DETAIL_QUERY = `
   *,
-  addresses ( * ),
-  profiles:user_id (
-    full_name,
-    phone
-  ),
   order_items (
     *,
     products (
@@ -197,7 +192,7 @@ export async function fetchSellerOrderDetail(orderId: string): Promise<OrderWith
   }
 
   // Verify this seller has at least one item in the order
-  const orderData = data as unknown as OrderWithItems & { profiles: { full_name: string | null; phone: string | null } | null }
+  const orderData = data as unknown as OrderWithItems
   const sellerHasItems = orderData.order_items.some(
     (item: { seller_id: string | null }) => item.seller_id === seller.id
   )

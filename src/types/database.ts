@@ -1,7 +1,8 @@
 // Database Types representing the Supabase Schema
 
 export type UserRole = "buyer" | "seller" | "admin";
-export type SellerStatus = "pending" | "approved" | "rejected";
+export type SellerStatus = "pending" | "approved" | "rejected" | "suspended";
+export type ModerationStatus = "pending_review" | "approved" | "rejected" | "hidden";
 export type ProductStatus = "draft" | "active" | "archived";
 export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
@@ -27,6 +28,7 @@ export interface Seller {
   logo_url: string | null;
   banner_url: string | null;
   status: SellerStatus;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +63,8 @@ export interface Product {
   stock_quantity: number;
   sku: string | null;
   status: ProductStatus;
+  moderation_status: ModerationStatus;
+  rejection_reason: string | null;
   featured: boolean;
   created_at: string;
   updated_at: string;
@@ -97,6 +101,10 @@ export interface Order {
   total_amount: number;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
+  buyer_name?: string | null;
+  buyer_email?: string | null;
+  buyer_phone?: string | null;
+  shipping_address_json?: Address | null;
   created_at: string;
   updated_at: string;
 }
